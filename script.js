@@ -4,11 +4,13 @@ const colorPicker = document.getElementById('colorPicker');
 const brushSize = document.getElementById('brushSize');
 const downloadBtn = document.getElementById('downloadBtn');
 const stampSelector = document.getElementById('stampSelector');
+const uploadPet = document.getElementById('uploadPet');
 
 let painting = false;
 let currentStamp = null;
+let uploadedStamp = null;
 
-// Preload stamp images
+// Preload default stamp images
 const stamps = {
   cat: new Image(),
   dog: new Image(),
@@ -47,10 +49,11 @@ function draw(e) {
 }
 
 function addStamp(e) {
-  if (currentStamp && stamps[currentStamp]) {
-    const x = e.clientX - canvas.offsetLeft - stamps[currentStamp].width / 2;
-    const y = e.clientY - canvas.offsetTop - stamps[currentStamp].height / 2;
-    ctx.drawImage(stamps[currentStamp], x, y);
+  if (currentStamp && (stamps[currentStamp] || uploadedStamp)) {
+    const stampImage = currentStamp === 'uploadedPet' ? uploadedStamp : stamps[currentStamp];
+    const x = e.clientX - canvas.offsetLeft - stampImage.width / 2;
+    const y = e.clientY - canvas.offsetTop - stampImage.height / 2;
+    ctx.drawImage(stampImage, x, y, 200, 200); // Draw at fixed 200x200 size
   }
 }
 
@@ -70,4 +73,25 @@ downloadBtn.addEventListener('click', () => {
 // Stamp selection
 stampSelector.addEventListener('change', (e) => {
   currentStamp = e.target.value !== 'none' ? e.target.value : null;
+});
+
+// Upload and resize user-uploaded pet image
+uploadPet.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const img = new Image();
+    img.onload = () => {
+      // Create an off-screen canvas to resize the image to 200x200
+      const offCanvas = document.createElement('canvas');
+      const offCtx = offCanvas.getContext('2d');
+      offCanvas.width = 200;
+      offCanvas.height = 200;
+      offCtx.drawImage(img, 0, 0, 200, 200);
+      
+      // Create a new image for the resized stamp
+      uploadedStamp = new Image();
+      uploadedStamp.src = offCanvas.toDataURL(); // Convert the canvas to data URL
+    };
+    img.src = URL.createObjectURL(file); // Load the uploaded image
+  }
 });
