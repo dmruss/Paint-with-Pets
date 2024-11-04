@@ -21,6 +21,14 @@ stamps.cat.src = 'cat.png';
 stamps.dog.src = 'dog.png';
 stamps.parrot.src = 'parrot.png';
 
+// Get accurate cursor position within the canvas
+function getCursorPosition(e) {
+  const rect = canvas.getBoundingClientRect(); // Get canvas position and size
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  return { x, y };
+}
+
 function startPosition(e) {
   if (currentStamp) {
     addStamp(e);
@@ -38,29 +46,35 @@ function endPosition() {
 function draw(e) {
   if (!painting || currentStamp) return;
 
+  const { x, y } = getCursorPosition(e);
+
   ctx.lineWidth = brushSize.value;
   ctx.lineCap = 'round';
   ctx.strokeStyle = colorPicker.value;
 
-  ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+  // Begin drawing path at the adjusted cursor position
+  ctx.lineTo(x, y);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+  ctx.moveTo(x, y);
 }
 
 function addStamp(e) {
   if (currentStamp && (stamps[currentStamp] || uploadedStamp)) {
     const stampImage = currentStamp === 'uploadedPet' ? uploadedStamp : stamps[currentStamp];
-    const x = e.clientX - canvas.offsetLeft - stampImage.width / 2;
-    const y = e.clientY - canvas.offsetTop - stampImage.height / 2;
-    ctx.drawImage(stampImage, x, y, 200, 200); // Draw at fixed 200x200 size
+    const { x, y } = getCursorPosition(e);
+
+    // Center the stamp at the cursor by offsetting it by half the width and height
+    ctx.drawImage(stampImage, x - 100, y - 100, 200, 200); // Draw at fixed 200x200 size
   }
 }
 
 // Event Listeners for drawing and stamps
 canvas.addEventListener('mousedown', startPosition);
 canvas.addEventListener('mouseup', endPosition);
-canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mousemove', (e) => {
+  if (painting) draw(e);
+});
 
 // Download as JPEG
 downloadBtn.addEventListener('click', () => {
